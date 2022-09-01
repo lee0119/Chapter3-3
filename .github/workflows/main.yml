@@ -65,4 +65,4 @@ jobs:
         --application-name lee-deployment 
         --deployment-group-name group-group
         --file-exists-behavior OVERWRITE 
-        --s3-location bucket=springlll,bundleType=zip,key=prscs.zip
+        --s3-location bucket=springlll,bundleType=zip,key=lee.zip
