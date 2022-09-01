@@ -1,58 +1,66 @@
-name: deploy
-
+# main 브랜치에 푸쉬 했을때
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ main ]
+
+# 해당 코드에서 사용될 변수 설정
+env:
+  PROJECT_NAME: springlll
+  BUCKET_NAME: springlll
+  CODE_DEPLOY_APP_NAME: lee-codeDeploy
+  DEPLOYMENT_GROUP_NAME: gorup
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-
-    strategy:
-      matrix:
-        node-version: [14.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-      - name: Checkout source code.
+      - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        
+      - name: Setup Java JDK 11
+        uses: actions/setup-java@v1
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: create env file
-        working-directory: ./server
+          java-version: 11
+       
+       ## gitignore한 파일 생성해주기
+       ## create application.properties
+      - name: make application-aws.properties
+        if: true # branch가 develop일 때
         run: |
-          touch .env
-          cat << EOF >> .env
-          ${{ secrets.ENV }}
-
-      - name: build client files
-        working-directory: ./client
-        run: |
-          yarn install --frozen-lockfile
-          yarn build
-
-      - name: zip distributions
-        run: zip -r lee.zip ./client/dist ./server ./appspec.yml ./scripts
-
-      - name: AWS configure credentials
+          # spring의 resources 경로로 이동
+          cd ./src/main/resources
+          touch ./application-aws.properties
+          # GitHub-Actions에서 설정한 값을 application-dev.properties 파일에 쓰기
+          echo "${{ secrets.PROPERTIES }}" > ./application-aws.properties
+        shell: bash
+		
+        #gradlew 파일 실행권한 설정
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+        shell: bash
+      
+        #빌드 시작
+      - name: Build with Gradle
+        run: ./gradlew build
+        shell: bash
+        
+        #프로젝트 zip파일로 압축
+      - name: Make Zip File
+        run: zip -qq -r ./$GITHUB_SHA.zip .
+        shell: bash
+      
+        #aws 접근 id, key
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
-
-      - name: upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./lee-codedeploy.zip s3://lee-codedeploy-bucket/public/
-
-      - name: deploy with AWS codeDeploy
-        run: aws deploy create-deployment
-          --application-name lee-codedeploy
-          --deployment-config-name CodeDeployDefault.OneAtATime
-          --deployment-group-name group-group
-          --s3-location bucket=lee-codedeploy-bucket,bundleType=zip,key=public/lee-codedeploy.zip
+      	
+        # s3에 압축한 zip파일 업로드
+      - name: Upload to S3
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip
+		
+        # s3에 업로드한 파일 code Deploy에서 배포 요청
+      - name: Code Deploy
+        run: aws deploy create-deployment --application-name $CODE_DEPLOY_APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name $DEPLOYMENT_GROUP_NAME --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
