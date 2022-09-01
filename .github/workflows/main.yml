@@ -8,7 +8,7 @@ env:
   PROJECT_NAME: springlll
   BUCKET_NAME: springlll
   CODE_DEPLOY_APP_NAME: lee-codeDeploy
-  DEPLOYMENT_GROUP_NAME: gorup
+  DEPLOYMENT_GROUP_NAME: group
 
 jobs:
   build:
