@@ -38,7 +38,7 @@ jobs:
           yarn build
 
       - name: zip distributions
-        run: zip -r blog-vanilla.zip ./client/dist ./server ./appspec.yml ./scripts
+        run: zip -r lee.zip ./client/dist ./server ./appspec.yml ./scripts
 
       - name: AWS configure credentials
         uses: aws-actions/configure-aws-credentials@v1
