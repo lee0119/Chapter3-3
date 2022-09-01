@@ -32,8 +32,7 @@ jobs:
           touch ./application-aws.properties
           # GitHub-Actions에서 설정한 값을 application-dev.properties 파일에 쓰기
           echo "${{ secrets.PROPERTIES }}" > ./application-aws.properties
-        shell: bash
-		
+        shell: bash	
         #gradlew 파일 실행권한 설정
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
@@ -56,11 +55,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
-      	
         # s3에 압축한 zip파일 업로드
       - name: Upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip
-		
+        run: aws s3 cp --region ap-northeast-2 ./$lee-codedeploy.zip s3://$BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip	
         # s3에 업로드한 파일 code Deploy에서 배포 요청
-      - name: Code Deploy
-        run: aws deploy create-deployment --application-name $CODE_DEPLOY_APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name $DEPLOYMENT_GROUP_NAME --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
+      - name: lee-codedeploy
+        run: aws deploy create-deployment --application-name $CODE_DEPLOY_APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name $DEPLOYMENT_GROUP_NAME --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$lee-codedeploy.zip
